@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8" />
+    <title>OpenAI 테스트</title>
+</head>
+<body>
+<h1>ChatCompletion 테스트</h1>
+<div>
+    <label for="prompt">프롬프트(질문) 입력: </label>
+    <input type="text" id="prompt" value="난 오늘 순대국을 먹었어" />
+    <button onclick="sendRequest()">대화 요청</button>
+</div>
+<hr/>
+<div>
+    <h2>응답:</h2>
+    <div id="responseArea"></div>
+</div>
+
+<script>
+    async function sendRequest() {
+        const promptValue = document.getElementById("prompt").value;
+        const responseArea = document.getElementById("responseArea");
+
+        try {
+            // 1) GET 방식 요청 (쿼리 파라미터)
+            /*
+            const res = await fetch(`/api/chat?prompt=${encodeURIComponent(promptValue)}`, {
+              method: 'GET'
+            });
+            */
+
+            // 2) POST 방식 요청 (JSON 바디)
+            const res = await fetch('/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ prompt: promptValue })
+            });
+
+            if (!res.ok) {
+                throw new Error('서버 요청 실패: ' + res.status);
+            }
+
+            // 서버로부터 문자열(JSON이 아니라 그냥 String)만 반환하므로 그대로 텍스트로 받음
+            const data = await res.text();
+
+            // 결과 출력
+            responseArea.textContent = data;
+        } catch (error) {
+            console.error(error);
+            responseArea.textContent = '에러 발생: ' + error.message;
+        }
+    }
+</script>
+</body>
+</html>
