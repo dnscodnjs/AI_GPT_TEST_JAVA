@@ -2,35 +2,142 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8" />
-    <title>OpenAI 테스트</title>
+    <title>채원이의 챗봇</title>
+    <style>
+        /* 기본 리셋 및 전체 레이아웃 */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: sans-serif;
+            background: #f3f3f3;
+        }
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            max-width: 600px;
+            margin: 0 auto;
+            height: 100vh;
+            background-color: #ffffff;
+            border: 1px solid #ddd;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        /* 헤더 영역 */
+        .header {
+            background: #673ab7;
+            color: #fff;
+            padding: 10px;
+            text-align: center;
+        }
+        /* 메시지 표시 영역 */
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+        .message {
+            margin-bottom: 10px;
+            max-width: 80%;
+            padding: 10px;
+            border-radius: 8px;
+            line-height: 1.4;
+            word-wrap: break-word;
+            white-space: pre-wrap; /* 여러 줄 응답 시 줄바꿈 처리 */
+        }
+        .user-message {
+            background: #d1e7dd;   /* 약간 연한 그린톤 */
+            margin-left: auto;    /* 사용자 메시지는 오른쪽 정렬 */
+            text-align: right;
+        }
+        .assistant-message {
+            background: #eeeeee;  /* 밝은 그레이 */
+            margin-right: auto;   /* 어시스턴트 메시지는 왼쪽 정렬 */
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+            background: #fff7f7;
+            border: 1px solid red;
+        }
+        /* 입력 영역 */
+        .input-area {
+            display: flex;
+            border-top: 1px solid #ddd;
+            padding: 10px;
+        }
+        .input-area input {
+            flex: 1;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+        .input-area button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background: #673ab7;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+        }
+        .input-area button:hover {
+            background: #5a2ea2;
+        }
+    </style>
 </head>
 <body>
-<h1>ChatCompletion 테스트</h1>
-<div>
-    <label for="prompt">프롬프트(질문) 입력: </label>
-    <input type="text" id="prompt" placeholder="질문 입력" />
-    <button onclick="sendRequest()">대화 요청</button>
-</div>
-<hr/>
-<div>
-    <h2>응답:</h2>
-    <div id="responseArea"></div>
+<div class="chat-container">
+    <!-- 헤더 영역 -->
+    <div class="header">
+        <h2>채원이의 챗봇</h2>
+    </div>
+
+    <!-- 메시지 표시 영역 -->
+    <div id="messages" class="messages"></div>
+
+    <!-- 사용자 입력 영역 -->
+    <div class="input-area">
+        <!-- Enter 키 입력 시 메시지 전송 -->
+        <input
+                type="text"
+                id="prompt"
+                placeholder="질문을 입력하세요..."
+                onkeydown="if (event.key === 'Enter') { sendMessage(); }"
+        />
+        <button onclick="sendMessage()">Send</button>
+    </div>
 </div>
 
 <script>
-    async function sendRequest() {
-        const promptValue = document.getElementById("prompt").value;
-        const responseArea = document.getElementById("responseArea");
+    // 잠깐 대기하는 Promise 함수
+    function wait(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
 
+    // 글자를 하나씩 찍어주는 함수
+    async function typeText(element, text, speed = 30) {
+        for (let i = 0; i < text.length; i++) {
+            element.textContent += text.charAt(i);
+            // speed ms 만큼 대기
+            await wait(speed);
+        }
+    }
+
+    async function sendMessage() {
+        const inputEl = document.getElementById('prompt');
+        const messagesEl = document.getElementById('messages');
+        const promptValue = inputEl.value.trim();
+
+        // 빈 문자열이면 무시
+        if (!promptValue) return;
+
+        // 1) 사용자 메시지를 채팅창에 표시 (즉시 표시)
+        addMessage(promptValue, 'user');
+        inputEl.value = '';
+
+        // 2) 서버에 요청 (POST 방식 예시)
         try {
-            // 1) GET 방식 요청 (쿼리 파라미터)
-            /*
-            const res = await fetch(`/api/chat?prompt=${encodeURIComponent(promptValue)}`, {
-              method: 'GET'
-            });
-            */
-
-            // 2) POST 방식 요청 (JSON 바디)
             const res = await fetch('/api/chat', {
                 method: 'POST',
                 headers: {
@@ -40,18 +147,56 @@
             });
 
             if (!res.ok) {
-                throw new Error('서버 요청 실패: ' + res.status);
+                throw new Error('서버 응답 에러: ' + res.status);
             }
 
-            // 서버로부터 문자열(JSON이 아니라 그냥 String)만 반환하므로 그대로 텍스트로 받음
-            const data = await res.text();
+            // 서버에서 단순히 text로 응답한다고 가정
+            const assistantText = await res.text();
 
-            // 결과 출력
-            responseArea.textContent = data;
+            // 3) 어시스턴트(LLM) 메시지를 '타이핑 효과'로 표시
+            addMessage(assistantText, 'assistant', true);
         } catch (error) {
-            console.error(error);
-            responseArea.textContent = '에러 발생: ' + error.message;
+            // 에러 메시지 표시
+            addMessage('에러 발생: ' + error.message, 'error');
         }
+    }
+
+    // 메시지를 화면에 추가하는 함수
+    // isTypingEffect: 어시스턴트 메시지에만 타이핑 효과 적용할지 여부
+    async function addMessage(text, sender, isTypingEffect = false) {
+        const messagesEl = document.getElementById('messages');
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('message');
+
+        if (sender === 'user') {
+            messageDiv.classList.add('user-message');
+            messageDiv.textContent = text;
+        } else if (sender === 'assistant') {
+            messageDiv.classList.add('assistant-message');
+            if (isTypingEffect) {
+                // 타이핑 효과로 출력
+                // 일단 공백, 차근차근 글자를 추가
+                messageDiv.textContent = '';
+                // DOM에 먼저 추가해야 typeText에서 element.textContent 변경 가능
+                messagesEl.appendChild(messageDiv);
+
+                await typeText(messageDiv, text, 20); // speed=20 (원하는 속도로 조정)
+            } else {
+                // 즉시 출력
+                messageDiv.textContent = text;
+            }
+        } else {
+            messageDiv.classList.add('error');
+            messageDiv.textContent = text;
+        }
+
+        if (!isTypingEffect) {
+            // isTypingEffect=true 경우에는 이미 appendChild까지 해준 뒤 타이핑 중이므로
+            messagesEl.appendChild(messageDiv);
+        }
+
+        // 스크롤을 항상 아래로
+        messagesEl.scrollTop = messagesEl.scrollHeight;
     }
 </script>
 </body>

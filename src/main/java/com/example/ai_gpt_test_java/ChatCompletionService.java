@@ -28,7 +28,7 @@ public class ChatCompletionService {
         requestBody.setModel("gpt-4o-mini"); // 예시로 입력
         requestBody.setMessages(Collections.singletonList(new ChatCompletionRequest.Message("user", userPrompt)));
         requestBody.setTemperature(1.0);
-        requestBody.setMax_tokens(100);
+        requestBody.setMax_tokens(1000);
 
         // 2) 헤더 설정
         HttpHeaders headers = new HttpHeaders();
