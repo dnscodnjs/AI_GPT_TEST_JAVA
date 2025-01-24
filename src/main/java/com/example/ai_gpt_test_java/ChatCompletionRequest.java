@@ -16,7 +16,7 @@ public class ChatCompletionRequest {
     // 모든 필드를 인자로 받는 생성자 (필요시)
     public ChatCompletionRequest(String model, List<Message> messages, double temperature, int max_tokens) {
         this.model = model;
-        this.messages = messages;
+        this.messages = messages;   
         this.temperature = temperature;
         this.max_tokens = max_tokens;
     }

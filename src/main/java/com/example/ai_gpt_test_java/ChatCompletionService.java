@@ -25,7 +25,7 @@ public class ChatCompletionService {
     public String getChatCompletion(String userPrompt) {
         // 1) 요청 바디 만들기
         ChatCompletionRequest requestBody = new ChatCompletionRequest();
-        requestBody.setModel("gpt-4o-mini"); // 예시로 입력
+        requestBody.setModel("gpt-4o-mini");
         requestBody.setMessages(Collections.singletonList(new ChatCompletionRequest.Message("user", userPrompt)));
         requestBody.setTemperature(1.0);
         requestBody.setMax_tokens(1000);
